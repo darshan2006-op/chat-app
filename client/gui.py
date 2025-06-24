@@ -19,7 +19,6 @@ class Window(Tk):
         run the asyncio event loop to handle incoming messages,
         also sets up the necessary widgets for sending and displaying messages.
         """
-
         # Initialize the Tkinter window
         super().__init__()
         self.title("Simple GUI")
@@ -49,11 +48,10 @@ class Window(Tk):
         if message != "":
             try:
                 # Append EOF marker to the message and send it
-                message += "<EOF>"
-                print(f"Sending message: {message}")
+                msg = message + "<EOF>"
+                print(f"Sending message: {msg}")
                 # Send the message to the server socket
-                print(self.client_socket.send(message.encode('utf-8')))
-                
+                print(self.client_socket.send(msg.encode('utf-8')))
                 # Clear the message box and update the display area
                 self.msg_box.delete(0, END)
                 self.msg_display.insert(END, f"You: {message}\n")
@@ -122,7 +120,7 @@ class Window(Tk):
 
                 # If a message is received, decode it and insert it into the text area
                 if msg != b'':
-                    self.msg_display.insert(END, msg.decode('utf-8') + '\n')
+                    self.msg_display.insert(END, msg.decode('utf-8').replace('<EOF>', '') + '\n')
                 # If server closes the connection, break the loop
                 else:
                     print("Connection closed by server")
@@ -146,6 +144,19 @@ class Window(Tk):
                 # Ensure the event loop yields control to allow other tasks to run
                 await aio.sleep(0)
 
+    def _do_nothing(self, event):
+        """
+        A placeholder method that does nothing.
+        This can be used to override default behaviors or for future extensions.
+
+        args:
+            event: The event that triggered this method, typically not used.
+        
+        Returns:
+            None
+        """
+        return "break"
+
     def make_widgets(self):
         """
         Creates the necessary widgets for the GUI, including the message box,
@@ -165,5 +176,8 @@ class Window(Tk):
         self.frame = Frame(self)
         self.frame.pack(side=TOP, fill=BOTH, expand=True, padx=10, pady=10)
 
-        self.msg_display = Text(self.frame, bg="white", fg="black", wrap=WORD, )
+        self.msg_display = Text(self.frame, bg="white", fg="black", wrap=WORD)
+        self.msg_display.bind("<Key>", self._do_nothing)
+        self.msg_display.bind("<Button-2>", self._do_nothing)
+        self.msg_display.bind("<Control-v>", self._do_nothing)
         self.msg_display.pack(side=LEFT, fill=BOTH, expand=True)
