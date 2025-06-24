@@ -1,10 +1,11 @@
 """
 This module implements a GUI client using Tkinter and asyncio.
-It connects to a server socket, allows users to send messages, and displays incoming messages in a text area.
+It connects to a server socket, allows users to send messages,
+and displays incoming messages in a text area.
 """
 
 # Import necessary libraries
-from tkinter import *
+from tkinter import Frame, Tk, Text, Entry, Button, END, WORD, BOTTOM, TOP, LEFT, RIGHT, X, BOTH
 import asyncio as aio
 import socket as soc
 
@@ -55,6 +56,8 @@ class Window(Tk):
                 # Clear the message box and update the display area
                 self.msg_box.delete(0, END)
                 self.msg_display.insert(END, f"You: {message}\n")
+
+            # pylint: disable=broad-except
             except Exception as e:
                 # Handle any exceptions that occur during sending
                 print(f"Error sending message: {e}")
@@ -67,7 +70,8 @@ class Window(Tk):
         try:
             # Run the asyncio event loop for a short duration to process incoming messages
             self.loop.run_until_complete(aio.sleep(0))
-        except Exception as e:
+        # pylint: disable=broad-except
+        except Exception:
             pass
 
         # Schedule the next run of the event loop
@@ -85,14 +89,16 @@ class Window(Tk):
 
     def destroy(self):
         """
-        Handles the window close event, cancels the running task, and cleans up resources.
+        Handles the window close event, 
+        cancels the running task, 
+        and cleans up resources.
         """
 
         print("Window closed")
         self.running.set()
         self.client_socket.close()
         super().destroy()
-    
+
     def run(self):
         """
         Starts the main event loop of the Tkinter window.
@@ -100,15 +106,18 @@ class Window(Tk):
         try:
             self.mainloop()
         finally:
-            # Ensure the asyncio loop is stopped and the running task is cancelled
+            # Ensure the asyncio loop is stopped and
+            # the running task is cancelled
             if self.running_task:
                 self.running_task.cancel()
             self.loop.close()
 
     async def read(self):
         """
-        Asynchronously reads messages from the server socket and displays them in the text area.
-        This method runs in a loop until the connection is closed or an error occurs.
+        Asynchronously reads messages from the server socket 
+        and displays them in the text area.
+        This method runs in a loop until the connection is closed 
+        or an error occurs.
         """
 
         print("Starting to read messages...")
@@ -126,17 +135,18 @@ class Window(Tk):
                     print("Connection closed by server")
                     self.running.set()
                     break
-            except soc.error as e:
-                # Handle socket errors, specifically connection reset by peer
-                if e.errno == 10054:
-                    self.running.set()
-                    break
             except BlockingIOError:
                 # Handle the case where no data is available to read
                 await aio.sleep(0)
+            except OSError as e:
+                # Handle socket errors, specifically connection reset by peer
+                if getattr(e, 'errno', None) == 10054:
+                    self.running.set()
+                    break
             except aio.CancelledError:
                 # Handle cancellation of the coroutine
                 break
+            # pylint: disable=broad-except
             except Exception as e:
                 # Handle any other exceptions that may occur
                 print(f"Error reading message: {e}")
@@ -144,7 +154,7 @@ class Window(Tk):
                 # Ensure the event loop yields control to allow other tasks to run
                 await aio.sleep(0)
 
-    def _do_nothing(self, event):
+    def _do_nothing(self, _event):
         """
         A placeholder method that does nothing.
         This can be used to override default behaviors or for future extensions.

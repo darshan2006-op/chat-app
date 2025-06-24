@@ -1,7 +1,9 @@
 """
 This is a asynchronous socket server that handles multiple client connections.
-It allows clients to send messages to each other, and broadcasts messages to all connected clients except the sender.
-It uses asyncio for asynchronous operations and non-blocking sockets to handle multiple clients concurrently.
+It allows clients to send messages to each other,
+and broadcasts messages to all connected clients except the sender.
+It uses asyncio for asynchronous operations and 
+non-blocking sockets to handle multiple clients concurrently.
 """
 
 # import necessary modules
@@ -12,17 +14,21 @@ import socket as soc
 server = soc.socket(soc.AF_INET, soc.SOCK_STREAM)
 clients: list[soc.socket] = []
 
-async def readAll(client_socket: soc.socket) -> tuple[bytes, bool]:
+async def read_all(client_socket: soc.socket) -> tuple[bytes, bool]:
     """ 
-    A function to read all the messages from a client socket until it receives a message ending with <EOF>.
+    A function to read all the messages from a client socket 
+    until it receives a message ending with <EOF>.
 
     Args:
         client_socket (soc.socket): The socket object for the client connection.
     
     Returns:
-        tuple[bytes, bool]: A tuple containing the received data and a boolean indicating if the client is still connected.
-        if the client is still connected, the boolean will be True, otherwise it will be False.
-        data will be the bytes received from the client or None if the data to be read is not ready.
+        tuple[bytes, bool]: A tuple containing the received data and a boolean indicating 
+        if the client is still connected.
+        if the client is still connected, 
+        the boolean will be True, otherwise it will be False.
+        data will be the bytes received from the client or 
+        None if the data to be read is not ready.
     """
 
     # initialize an empty bytes object to store the received data
@@ -38,20 +44,20 @@ async def readAll(client_socket: soc.socket) -> tuple[bytes, bool]:
             # Append the received chunk to the data
             data += chunk
 
-            # If the chunk is empty, it means the client has disconnected 
+            # If the chunk is empty, it means the client has disconnected
             # and we return the data received so far and False to indicate disconnection
             if chunk == b'':
                 return data, False
 
-            # If the received data ends with <EOF>, return the data and True to indicate the client is still connected
+            # If the received data ends with <EOF>,
+            #  return the data and True to indicate the client is still connected
             if data.endswith(b'<EOF>'):
                 return data, True
-            
-
         except BlockingIOError:
             # If the socket is not ready to read data, return None and True
             # to indicate that the client is still connected but no data is available at the moment
             return None, True
+        # pylint: disable=broad-except
         except Exception as e:
             # Handle any other exceptions that may occur during reading
             print(f"Error while reading messages: {e}")
@@ -59,7 +65,8 @@ async def readAll(client_socket: soc.socket) -> tuple[bytes, bool]:
 
 async def broadcast(message: bytes, sender: soc.socket) -> None:
     """
-    a function to handle the task of broadcasting a message to all connected clients except the sender.
+    a function to handle the task of broadcasting a message 
+    to all connected clients except the sender.
     
     Args:
         message (bytes): The message to broadcast.
@@ -68,9 +75,6 @@ async def broadcast(message: bytes, sender: soc.socket) -> None:
     Returns:
         None
     """
-    # Referencing the global clients list to access connected clients
-    global clients
-
     # Check if there are at least two clients connected
     if len(clients) < 2:
         return
@@ -94,12 +98,13 @@ async def broadcast(message: bytes, sender: soc.socket) -> None:
         except BlockingIOError:
             # If the socket is not ready to send data, yield control to the event loop
             await aio.sleep(0)
+        # pylint: disable=broad-except
         except Exception as e:
             # Handle any other exceptions that may occur during broadcasting
             print(f"Error while broadCasting {client.getpeername()}: {e}")
             clients.remove(client)
 
-async def handle_client(client_socket: soc.socket, add: soc.AddressInfo) -> None:
+async def handle_client(client_socket: soc.socket, add: tuple) -> None:
     """
     Handle client connections and manage communication between them.
     
@@ -110,19 +115,19 @@ async def handle_client(client_socket: soc.socket, add: soc.AddressInfo) -> None
     Returns:
         None
     """
-    global clients
     client_socket.setblocking(False)
     clients.append(client_socket)
     connected = True
     while connected:
         try:
-            data, conn = await readAll(client_socket)
+            data, conn = await read_all(client_socket)
             if not conn:
                 connected = False
             if data :
                 print(f"Received from {add}: {data}")
                 aio.create_task(broadcast(data, client_socket))
             await aio.sleep(0)  # Yield control to the event loop
+        # pylint:  disable=broad-except
         except Exception as e:
             print(f"error while handling client: {e}")
             break
@@ -141,7 +146,7 @@ async def main() -> None:
     bind_address = (soc.gethostbyname(soc.gethostname()), 8080)
     server.bind(bind_address)
 
-    # Set blocking to False to allow non-blocking operations 
+    # Set blocking to False to allow non-blocking operations
     server.setblocking(False)
 
     # Start listening for incoming connections
@@ -153,12 +158,12 @@ async def main() -> None:
             # Try to accept a new client connection
             client_socket, addr = server.accept()
             print(f"Connection from {addr} has been established.")
-            
             # Create a new task to handle the client connection
             aio.create_task(handle_client(client_socket, addr))
         except BlockingIOError:
             # If no connections are available, yield control to the event loop
             await aio.sleep(0)
+        # pylint: disable=broad-except
         except Exception as e:
             # Handle any other exceptions that may occur
             print(f"Error in the mainloop: {e}")

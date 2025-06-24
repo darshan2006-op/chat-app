@@ -5,7 +5,6 @@ This script initializes the GUI window and starts the event loop.
 
 # Import necessary modules
 from gui import Window
-import asyncio as aio
 
 def main():
     """

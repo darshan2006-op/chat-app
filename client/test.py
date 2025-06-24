@@ -25,6 +25,7 @@ async def read_data():
     except BlockingIOError:
         # If the socket is not ready to read data, we simply return
         return
+    # pylint: disable=broad-except
     except Exception as e:
         # Handle any other exceptions that may occur during reading
         print(f"An error occurred while reading data: {e}")
@@ -33,7 +34,8 @@ async def read_data():
 async def main():
     """
     Main function to run the test client application.
-    This function connects to the server, sends messages in a loop, and reads responses asynchronously.
+    This function connects to the server, 
+    sends messages in a loop, and reads responses asynchronously.
     """
 
     # Initialize a counter to keep track of the number of messages sent
@@ -55,13 +57,13 @@ async def main():
             # If the socket is not ready to send data, we simply wait and retry
             print("Socket is currently blocking, retrying...")
             await aio.sleep(0)
+        # pylint: disable=broad-except
         except Exception as e:
             # Handle any other exceptions that may occur during sending
             print(f"An error occurred: {e}")
             break
         finally:
             i += 1
-    
     # Close the client socket after sending all messages
     client.close()
 
