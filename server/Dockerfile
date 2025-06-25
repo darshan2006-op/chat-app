@@ -11,5 +11,7 @@ WORKDIR /app
 # copy the files from the current directory to the /app directory in the container
 COPY . /app/
 
+RUN pip install -r requirements.txt
+
 # Run the server on the start of the container
 CMD [ "python", "-u", "main.py" ]

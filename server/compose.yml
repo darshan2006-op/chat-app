@@ -2,10 +2,24 @@
 services:
   server:
     build: .
+    container_name: server
     ports:
       - "8080:8080"
+    depends_on:
+      - redis
     develop:
       watch: 
         - action: sync+restart
           path: .
           target: /app
+
+  redis:
+    image: redis
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+volumes:
+  redis_data:

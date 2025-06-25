@@ -9,10 +9,12 @@ non-blocking sockets to handle multiple clients concurrently.
 # import necessary modules
 import asyncio as aio
 import socket as soc
+from redis.asyncio import Redis
 
 # Initilize the server socket and a list to keep track of connected clients
 server = soc.socket(soc.AF_INET, soc.SOCK_STREAM)
 clients: list[soc.socket] = []
+r = Redis(host="redis", port=6379)
 
 async def read_all(client_socket: soc.socket) -> tuple[bytes, bool]:
     """ 
@@ -117,6 +119,11 @@ async def handle_client(client_socket: soc.socket, add: tuple) -> None:
     """
     client_socket.setblocking(False)
     clients.append(client_socket)
+    await broadcast(f"{add[0]}:{add[1]} has connected<EOF>".encode(), client_socket)
+    await r.hset(f"connections:{add[0]}:{add[1]}", mapping={
+        "address": str(add[0]),
+        "port": str(add[1])
+    })
     connected = True
     while connected:
         try:
@@ -134,6 +141,7 @@ async def handle_client(client_socket: soc.socket, add: tuple) -> None:
     print(f"client {add} disconnected.")
     print(f"length of clients: {len(clients)}")
     clients.remove(client_socket)
+    await r.delete(f"connections:{add[0]}:{add[1]}")
     client_socket.close()
 
 async def main() -> None:
